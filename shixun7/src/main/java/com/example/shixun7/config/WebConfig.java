@@ -20,7 +20,21 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        // 甜点图片
         registry.addResourceHandler("/photo/**")
                 .addResourceLocations("file:./photo/");
+
+        // Knife4j / Swagger UI 核心资源（doc.html）
+        registry.addResourceHandler("doc.html")
+                .addResourceLocations("classpath:/META-INF/resources/");
+
+        // webjars 资源（CSS, JS 等），必须配置
+        registry.addResourceHandler("/webjars/**")
+                .addResourceLocations("classpath:/META-INF/resources/webjars/")
+                .resourceChain(false); // 避免资源链问题
+
+        // 可选：显式映射 swagger-ui 的静态资源
+        registry.addResourceHandler("/swagger-ui/**")
+                .addResourceLocations("classpath:/META-INF/resources/webjars/swagger-ui/");
     }
 }

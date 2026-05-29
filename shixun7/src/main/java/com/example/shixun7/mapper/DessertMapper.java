@@ -20,7 +20,7 @@ public interface DessertMapper {
             "</script>")
     List<Dessert> list(@Param("name") String name, @Param("catId") Long catId, @Param("status") Integer status);
 
-    @Select("SELECT * FROM dessert WHERE id = #{id}")
+    @Select("SELECT d.*, c.name as category_name FROM dessert d LEFT JOIN category c ON d.cat_id = c.id WHERE d.id = #{id}")
     Dessert selectById(Long id);
 
     // 修正：originalPrice -> original_price

@@ -25,8 +25,8 @@
       </el-form>
     </el-card>
 
-    <!-- 订单列表 - 过滤掉没有收货人名字和状态为待付款/已取消的订单 -->
-    <el-table :data="filteredOrderList" stripe v-loading="loading" style="width: 100%">
+    <!-- 订单列表（分页展示） -->
+    <el-table :data="paginatedOrderList" stripe v-loading="loading" style="width: 100%">
       <el-table-column prop="orderNo" label="订单号" width="180" />
       <el-table-column prop="receiverName" label="收货人" width="100" />
       <el-table-column prop="receiverPhone" label="手机号" width="120" />
@@ -46,7 +46,6 @@
       </el-table-column>
       <el-table-column label="操作" width="250" fixed="right">
         <template #default="{ row }">
-          <!-- 修改地址：只有已付款(2)状态才能修改 -->
           <el-button v-if="row.status === 2" type="primary" link @click="editAddress(row)">
             修改地址
           </el-button>
@@ -57,6 +56,13 @@
         </template>
       </el-table-column>
     </el-table>
+
+    <!-- 分页组件 -->
+    <div class="pagination-container">
+      <el-pagination background layout="total, sizes, prev, pager, next, jumper" :total="filteredOrderList.length"
+        :page-size="pageSize" :current-page="currentPage" @size-change="handleSizeChange"
+        @current-change="handleCurrentChange" :page-sizes="[10, 20, 50, 100]" />
+    </div>
 
     <!-- 修改地址弹窗 -->
     <el-dialog v-model="addressDialogVisible" title="修改收货地址" width="500px">
@@ -129,6 +135,10 @@ const detailVisible = ref(false)
 const addressFormRef = ref()
 const currentOrder = ref<any>(null)
 
+// 分页相关
+const currentPage = ref(1)
+const pageSize = ref(10)
+
 const searchForm = ref({
   orderNo: '',
   receiverName: '',
@@ -152,19 +162,17 @@ const addressRules = {
   address: [{ required: true, message: '请输入收货地址', trigger: 'blur' }]
 }
 
-// 格式化时间
 const formatTime = (time: string) => {
   if (!time) return ''
   return time.replace('T', ' ').replace(/\.\d+.*$/, '')
 }
 
-// 筛选后的订单列表 - 过滤掉没有收货人名字、状态为待付款(1)和已取消(5)的订单
+// 筛选后的订单列表（全量，用于分页）
 const filteredOrderList = computed(() => {
   let list = [...orderList.value]
 
   // 过滤掉没有收货人名字的订单
   list = list.filter(o => o.receiverName && o.receiverName.trim() !== '')
-
   // 过滤掉待付款(1)和已取消(5)的订单
   list = list.filter(o => o.status !== 1 && o.status !== 5)
 
@@ -177,8 +185,14 @@ const filteredOrderList = computed(() => {
   if (searchForm.value.status !== null) {
     list = list.filter(o => o.status === searchForm.value.status)
   }
-
   return list
+})
+
+// 当前页显示的订单（分页切片）
+const paginatedOrderList = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  const end = start + pageSize.value
+  return filteredOrderList.value.slice(start, end)
 })
 
 const getStatusText = (status: number) => {
@@ -209,6 +223,8 @@ const fetchOrders = async () => {
     const res: any = await orderApi.adminGetAllOrders()
     if (res.code === 200) {
       orderList.value = res.data || []
+      // 重置分页到第一页
+      currentPage.value = 1
     }
   } catch (error) {
     ElMessage.error('获取订单失败')
@@ -218,15 +234,25 @@ const fetchOrders = async () => {
 }
 
 const searchOrders = () => {
-  // computed 会自动处理筛选
+  currentPage.value = 1  // 搜索后重置页码
 }
 
 const resetSearch = () => {
   searchForm.value = { orderNo: '', receiverName: '', status: null }
+  currentPage.value = 1
+}
+
+// 分页回调
+const handleSizeChange = (val: number) => {
+  pageSize.value = val
+  currentPage.value = 1
+}
+
+const handleCurrentChange = (val: number) => {
+  currentPage.value = val
 }
 
 const editAddress = (order: any) => {
-  // 只有已付款状态才能修改地址
   if (order.status !== 2) {
     ElMessage.warning('只有已付款的订单才能修改地址')
     return
@@ -269,7 +295,6 @@ const submitAddress = async () => {
 }
 
 const deliverOrder = async (order: any) => {
-  // 只有已付款状态才能发货
   if (order.status !== 2) {
     ElMessage.warning('只有已付款的订单才能发货')
     return
@@ -321,5 +346,11 @@ h2 {
   font-weight: bold;
   margin-top: 20px;
   color: #ff6b6b;
+}
+
+.pagination-container {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
 }
 </style>

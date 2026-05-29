@@ -1,5 +1,6 @@
 <template>
-  <div class="register-page">
+  <div class="register-page" :style="{ backgroundImage: `url(${bgImage})` }">
+    <div class="register-overlay"></div>
     <div class="register-card">
       <div class="logo">🍰</div>
       <h1>注册账号</h1>
@@ -8,12 +9,15 @@
           <el-input v-model="form.username" placeholder="用户名" prefix-icon="User" size="large" />
         </el-form-item>
         <el-form-item prop="password">
-          <el-input v-model="form.password" type="password" placeholder="密码" prefix-icon="Lock" size="large" show-password />
+          <el-input v-model="form.password" type="password" placeholder="密码" prefix-icon="Lock" size="large"
+            show-password />
         </el-form-item>
         <el-form-item prop="confirmPwd">
-          <el-input v-model="form.confirmPwd" type="password" placeholder="确认密码" prefix-icon="Lock" size="large" show-password />
+          <el-input v-model="form.confirmPwd" type="password" placeholder="确认密码" prefix-icon="Lock" size="large"
+            show-password />
         </el-form-item>
-        <el-button type="primary" size="large" :loading="loading" @click="handleRegister" class="register-btn">注册</el-button>
+        <el-button type="primary" size="large" :loading="loading" @click="handleRegister"
+          class="register-btn">注册</el-button>
         <div class="footer"><router-link to="/login">已有账号？去登录</router-link></div>
       </el-form>
     </div>
@@ -25,6 +29,7 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { userApi } from '@/api/user'
+import bgImage from '@/assets/注册图.jpg'
 
 const router = useRouter()
 const formRef = ref()
@@ -50,7 +55,7 @@ const handleRegister = async () => {
     const res: any = await userApi.register({ username: form.username, password: form.password })
     if (res.code === 200) {
       ElMessage.success('注册成功，请登录')
-      router.push('/login')
+      await router.push('/login')
     } else {
       ElMessage.error(res.message || '注册失败')
     }
@@ -64,22 +69,65 @@ const handleRegister = async () => {
 
 <style scoped>
 .register-page {
+  position: relative;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea, #764ba2);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
+
+/* 半透明遮罩层 */
+.register-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+}
+
 .register-card {
+  position: relative;
+  z-index: 1;
   width: 450px;
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 32px;
   padding: 48px 40px;
   text-align: center;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
-.logo { font-size: 56px; margin-bottom: 16px; }
-.register-card h1 { font-size: 28px; margin-bottom: 30px; }
-.register-btn { width: 100%; height: 48px; font-size: 16px; background: linear-gradient(135deg, #667eea, #764ba2); border: none; margin: 20px 0; }
-.footer a { color: #667eea; text-decoration: none; }
+
+.logo {
+  font-size: 56px;
+  margin-bottom: 16px;
+}
+
+.register-card h1 {
+  font-size: 28px;
+  margin-bottom: 30px;
+  color: #333;
+}
+
+.register-btn {
+  width: 100%;
+  height: 48px;
+  font-size: 16px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border: none;
+  margin: 20px 0;
+}
+
+.footer a {
+  color: #667eea;
+  text-decoration: none;
+}
+
+.footer a:hover {
+  text-decoration: underline;
+}
 </style>

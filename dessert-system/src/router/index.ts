@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-// 直接导入（替代动态导入）
+// 直接导入组件（替代动态导入）
 import Login from '@/views/Login.vue'
 import Register from '@/views/Register.vue'
 import Layout from '@/views/Layout.vue'
@@ -29,13 +29,13 @@ const routes = [
     path: '/login',
     name: 'Login',
     component: Login,
-    meta: { requiresAuth: false, title: '登录' }
+    meta: { requiresAuth: false, title: '登录' },
   },
   {
     path: '/register',
     name: 'Register',
     component: Register,
-    meta: { requiresAuth: false, title: '注册' }
+    meta: { requiresAuth: false, title: '注册' },
   },
   {
     path: '/',
@@ -58,84 +58,87 @@ const routes = [
             }
           }
           return '/home'
-        }
+        },
       },
       {
         path: 'home',
         name: 'Home',
         component: Home,
-        meta: { title: '首页', requiresAuth: true }
+        meta: { title: '首页', requiresAuth: true },
       },
       {
         path: 'admin-home',
         name: 'AdminHome',
         component: AdminHome,
-        meta: { title: '数据面板', requiresAuth: true, requiresAdmin: true }
+        meta: { title: '数据面板', requiresAuth: true, requiresAdmin: true },
       },
       {
         path: 'dessert-list',
         name: 'DessertList',
         component: DessertList,
-        meta: { title: '甜点商城', requiresAuth: true, userOnly: true }
+        meta: { title: '甜点商城', requiresAuth: true, userOnly: true },
       },
       {
         path: 'dessert-detail/:id',
         name: 'DessertDetail',
         component: DessertDetail,
-        meta: { title: '商品详情', requiresAuth: true, userOnly: true }
+        meta: { title: '商品详情', requiresAuth: true, userOnly: true },
       },
       {
         path: 'cart',
         name: 'Cart',
         component: Cart,
-        meta: { title: '购物车', requiresAuth: true, userOnly: true }
+        meta: { title: '购物车', requiresAuth: true, userOnly: true },
       },
       {
         path: 'orders',
         name: 'Orders',
         component: Orders,
-        meta: { title: '我的订单', requiresAuth: true }
+        meta: { title: '我的订单', requiresAuth: true },
       },
       {
         path: 'category',
         name: 'Category',
         component: Category,
-        meta: { title: '分类管理', requiresAuth: true, requiresAdmin: true }
+        meta: { title: '分类管理', requiresAuth: true, requiresAdmin: true },
       },
       {
         path: 'dessert',
         name: 'Dessert',
         component: Dessert,
-        meta: { title: '甜点管理', requiresAuth: true, requiresAdmin: true }
+        meta: { title: '甜点管理', requiresAuth: true, requiresAdmin: true },
       },
       {
         path: 'order-manage',
         name: 'OrderManage',
         component: OrderManage,
-        meta: { title: '订单管理', requiresAuth: true, requiresAdmin: true }
-      }
-    ]
+        meta: { title: '订单管理', requiresAuth: true, requiresAdmin: true },
+      },
+    ],
   },
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: NotFound,
-    meta: { title: '404', requiresAuth: false }
-  }
+    meta: { title: '404', requiresAuth: false },
+  },
 ]
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes,
+  // 新增：路由切换后滚动到顶部（解决点击甜点卡片后页面停留在底部的问题）
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) {
+      return savedPosition
+    } else {
+      return { top: 0 }
+    }
+  },
 })
 
 // 路由守卫
 router.beforeEach((to, _from, next) => {
-  // 调试打印
-  console.log('=== 路由守卫 ===')
-  console.log('目标路径:', to.path)
-  console.log('路由元信息:', to.meta)
-
   const token = localStorage.getItem('token')
   const userStr = localStorage.getItem('user')
   let userRole = 0
@@ -149,16 +152,11 @@ router.beforeEach((to, _from, next) => {
     }
   }
 
-  console.log('token存在:', !!token)
-  console.log('用户角色:', userRole)
-  console.log('是否是管理员:', userRole === 1)
-
   // 设置页面标题
   document.title = to.meta.title ? `甜点管理系统 - ${to.meta.title}` : '甜点管理系统'
 
   // 需要登录的页面
   if (to.meta.requiresAuth && !token) {
-    console.log('→ 需要登录，跳转到登录页')
     next('/login')
     return
   }
@@ -166,10 +164,8 @@ router.beforeEach((to, _from, next) => {
   // 已登录访问登录/注册页，跳转到对应首页
   if ((to.path === '/login' || to.path === '/register') && token) {
     if (userRole === 1) {
-      console.log('→ 已登录管理员访问登录页，跳转 /admin-home')
       next('/admin-home')
     } else {
-      console.log('→ 已登录普通用户访问登录页，跳转 /home')
       next('/home')
     }
     return
@@ -177,19 +173,16 @@ router.beforeEach((to, _from, next) => {
 
   // 管理员不能访问普通用户专用页面（userOnly）
   if (to.meta.userOnly && userRole === 1) {
-    console.log('→ 管理员尝试访问普通用户页面，跳转 /admin-home')
     next('/admin-home')
     return
   }
 
   // 普通用户不能访问管理员页面（requiresAdmin）
   if (to.meta.requiresAdmin && userRole !== 1) {
-    console.log('→ 普通用户尝试访问管理员页面，跳转 /home')
     next('/home')
     return
   }
 
-  console.log('→ 允许访问')
   next()
 })
 
